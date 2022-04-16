@@ -1,97 +1,85 @@
-const buttonContainer = document.querySelector(".button-container");
-let resultScreen = document.querySelector(".result-screen");
+let runningTotal = 0;
+let buffer = "0";
+let previousOperator = null;
+const screen = document.querySelector(".screen");
 
-let prevInput = "";
-let currInput = "";
-let operator = "";
+document
+  .querySelector(".calc-buttons")
+  .addEventListener("click", function(event) {
+    buttonClick(event.target.innerText);
+})
 
-const digitRegex = /[0-9]/;
-const clearRegex = /c/i;
-const singleDigitRegex = /[0-9]{1}/;
-const backspace = "&#9224;";
-
-buttonContainer.addEventListener("click", function(event) {
-  const buttonSymbol = event.target.innerText; 
-  //if number button, add the string to the input string
-  if (buttonSymbol.match(digitRegex)) {
-    resultScreen.innerText = stringAdd(buttonSymbol,currInput);
-    console.log("digit");
+function buttonClick(value) {
+  if (isNaN(parseInt(value))) {
+    handleSymbol(value);
+  } else {
+    handleNumber(value);
   }
-  //if clear button, reset the input string
-  //if its clicked two times, reset everything
-  if (buttonSymbol.match(clearRegex)) {
-    if (currInput = "" && prevInput != "" && operator != "") {
-      clearEverything();
-    }
-    resultScreen.innerText = clearScreen();
-  }
-  //if equals button, prevInput(operator)currInput
-  if (buttonSymbol.match("=")) {
-    if (operator != "") {
-      resultScreen = equals(currInput,prevInput,operator);
-    }
-  }
-  //OPTIONAL if backspace button, remove the last added string from
-  //the input string
-  if (buttonSymbol.match(backspace)) {
-    if (currInput.match(singleDigitRegex)) {
-      resultScreen.innerText = clearInput();      
-    } else {
-      resultScreen.innerText = deleteDigit(currInput);
-    }
-  }
-  //if operator button, store the previous value, reset
-  //the input string and save which operation you wanna do
-  else {
-    operator = buttonSymbol;
-    stringAdd(currInput,prevInput);
-    resultScreen.innerText = clearScreen();
-  }
-
-  //update the result screen at after every click
-  console.log(buttonSymbol);
-});
-
-function stringAdd(string1,string2) {
-  string2 += string1;
-  return string2;
+  rerender();
 }
 
-function clearScreen() {
-  currInput = "";
-  return "0";
-}
-
-function clearEverything() {
-  prevInput = "";
-  operator = "";
-}
-
-function equals(string1,string2,operator) {
-  let result = 0;
-  let num1 = parseInt(string1);
-  let num2 = parseInt(string2);
-  switch (operator) {
-    case /\//:
-      result = num1 / num2;
-      break;
-    case /x/i:
-      result = num1 * num2;
-      break;
-    case "+":
-      result = num1 + num2;
-      break;
-    case "-":
-      result = num1 - num2;
-      break;
-  
+function handleNumber(value) {
+  if (buffer === "0") {
+    buffer = value;
+  } else {
+    buffer += value;
   }
-  console.log(result);
-  console.log(toString(result));
-  return toString(result);
 }
 
-function deleteDigit(string) {
-  string = text.slice(0,-1);
-  return string;
+function handleSymbol(value) {
+  switch (value) {
+    case "C":
+      buffer = "0";
+      runningTotal = 0;
+      previousOperator = null;
+      break;
+    case "=":
+      if (previousOperator === null) {
+        return;
+      }
+      flushOperation(parseInt(buffer));
+      previousOperator = null;
+      buffer = "" + runningTotal;
+      runningTotal = 0;
+      break;
+    case "⌫":
+      if (buffer.length === 1) {
+        buffer = "0";
+      } else {
+        buffer = buffer.substring(0, buffer.length - 1);
+        break;
+      } 
+    default:
+      handleMath(value);
+      break;
+  }
+}
+
+function rerender() {
+  screen.innerText = buffer;
+}
+
+function handleMath(value) {
+  const intBuffer = parseInt(buffer);
+  if (runningTotal === 0) {
+    runningTotal = intBuffer;
+  } else {
+    flushOperation(intBuffer);
+  }
+
+  previousOperator = value;
+
+  buffer = "0";
+}
+
+function flushOperation(intBuffer) {
+  if (previousOperator === "+") { 
+    runningTotal += intBuffer;
+  } else if (previousOperator === "-") { 
+    runningTotal -= intBuffer;
+  } else if (previousOperator === "x") { 
+    runningTotal *= intBuffer;
+  } else {
+    runningTotal /= intBuffer;
+  }
 }
